@@ -35,6 +35,6 @@ alter table employee add current_date date;
 CREATE OR REPLACE FUNCTION 	insereDados() RETURN VOID AS $$
 
 BEGIN
-	insert into employee(1,'Joao',now(),3200,CURRENT_USER, CURRENT_DATE);
+	insert into employee(id, name, birthDate, salary, CURRENT_USER,CURRENT_DATE);
 END;
 $$ LANGUAGE plpgsql;
