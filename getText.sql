@@ -1,7 +1,7 @@
 CREATE or REPLACE FUNCTION getText(texto varchar) RETURNS void AS  $$
 
 BEGIN
-     RAISE NOTICE texto;  
+     RETURN texto;  
 END; 
 $$ LANGUAGE plpgsql;
 
