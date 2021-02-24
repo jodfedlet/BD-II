@@ -1,4 +1,4 @@
-CREATE or REPLACE FUNCTION getText(texto varchar) RETURNS void AS  $$
+CREATE or REPLACE FUNCTION getText(texto varchar) RETURNS varchar AS  $$
 
 BEGIN
      RETURN texto;  
