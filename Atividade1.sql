@@ -1,7 +1,7 @@
 create table employee(
 	id int,
 	name varchar(50),
-	bithDate int,
+	birthDate int,
 	salary float
 );
 
