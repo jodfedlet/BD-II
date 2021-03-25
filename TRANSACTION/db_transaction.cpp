@@ -1,65 +1,67 @@
-/*
-To compile the code, use the following command
-g++ db_transaction.cpp -o output -L/usr/include/mysql/mysql  -lmysqlclient && ./output
-*/
-
-
 #include <iostream>
-#include <mysql/mysql.h> 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string>
+#include <postgresql/libpq-fe.h>
 
 using namespace std;
 
-struct connection_details{
-    const char *server, *pass, *database, *user;
-};
-
-MYSQL* mysql_connection_setup(struct connection_details mysql_details){
-    MYSQL *connection = mysql_init(NULL);
-
-    if (!mysql_real_connect(connection, mysql_details.server, mysql_details.user,
-     mysql_details.pass, mysql_details.database, 0,NULL,0)
-     ){
-        std::cout << "Connection failed: " << mysql_error(connection) << std::endl;
-        exit(1);
-    }
-    return connection;
-    
+static void
+rollback(PGconn *conn, PGresult *res)
+{
+    res = PQexec(conn, "ROLLBACK");
+    exit(1);
 }
 
-MYSQL_RES* mysql_execute_query(MYSQL *connection, const char *sql_query){
-    if(mysql_query(connection, sql_query)){
-        std::cout << "Mysql Query Error: "<< mysql_error(connection) << std::endl;
-    }
+void insert_data_expl(PGconn *conn){
+   PGresult *res;
 
-    return mysql_use_result(connection);
+   res = PQexec(conn, "BEGIN");
+   
+   res = PQexec(conn,"INSERT INTO public.product VALUES(22,'Test Piphane 22')");
+   res = PQexec(conn,"INSERT INTO public.product VALUES(16,'Test Piphane 16')");
+
+   res = PQexec(conn, "COMMIT");
+  
+   if (PQresultStatus(res) != PGRES_COMMAND_OK)
+   {
+       std::cout << "Failed to insert: %s" << PQerrorMessage(conn) << std::endl;
+      rollback(conn, res);
+      PQclear(res);
+   }
+}
+
+void insert_data_impl(PGconn *conn){
+   PGresult *res;
+   
+   res = PQexec(conn,"INSERT INTO public.product VALUES(20,'Test Piphane 20 impl')");
+   res = PQexec(conn,"INSERT INTO public.product VALUES(16,'Test Piphane 16 impl')");
+
+   if (PQresultStatus(res) != PGRES_COMMAND_OK)
+   {
+       std::cout << "Failed to insert: %s" << PQerrorMessage(conn) << std::endl;
+      rollback(conn, res);
+      PQclear(res);
+   }
 }
 
 int main(int argc, char* argv[]) {
-  
-  MYSQL *conn;
-  MYSQL_RES *res;
-  MYSQL_ROW row;
+
+   PGconn *conn;
+   
+
+   char *sql;
 
 
-  struct connection_details mysql_data;
-  mysql_data.server = "localhost";
-  mysql_data.user = "root";
-  mysql_data.pass = "root";
-  mysql_data.database = "Nuvann";
+   conn = PQconnectdb("dbname=hw2 host=localhost user=postgres password=postgres");
 
-  conn = mysql_connection_setup(mysql_data);
-  res = mysql_execute_query(conn, "Select * from products");
+   /* Check to see that the backend connection was successfully made */
+   if (PQstatus(conn) != CONNECTION_OK)
+   {
+      std::cout << "Connection to database failed: %s" << PQerrorMessage(conn) << std::endl;
+      exit(1);
+   }
 
-  std::cout << "Display data: \n" << std::endl;
-
-  while ((row = mysql_fetch_row(res)) != NULL)
-  {
-      std::cout << row[0] << " | "<< row[1] << " | "<< row[2] << " | "<< row[3] << " | "<< row[4] << 
-      std::endl << std::endl;
-  }
-
-  mysql_free_result(res);
-  mysql_close(conn);
-  
-  return 0;
+   insert_data_impl(conn);
+   insert_data_expl(conn);
 }
