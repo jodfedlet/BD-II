@@ -63,8 +63,7 @@ int main(int argc, char* argv[]) {
 
    conn = PQconnectdb("dbname=hw2 host=localhost user=postgres password=postgres");
 
-   if (PQstatus(conn) != CONNECTION_OK)
-   {
+   if (PQstatus(conn) != CONNECTION_OK){
       std::cout << "Connection to database failed: %s" << PQerrorMessage(conn) << std::endl;
       exit(1);
    }else{
