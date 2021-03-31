@@ -62,8 +62,6 @@ void insert_data_expl(PGconn *conn){
             v.push_back(substr);
          }
 
-         
-      
          for (size_t i = 0; i < v.size(); i++){
             v[0].erase(std::remove(v[0].begin(),v[0].end(),'\"'),v[0].end());
             v[0].erase(std::remove(v[0].begin(),v[0].end(),'\''),v[0].end());
