@@ -69,17 +69,15 @@ void insert_data_expl(PGconn *conn){
             int id = countLine+1;
 
             stringstream ss;
+            string idToString,sql;
+
             ss << id;
-            string idToString, first, endpart, sql;
 
             idToString = ss.str();
 
-            first = "INSERT INTO public.product VALUES("+idToString+","+"\'";
+            sql = "INSERT INTO public.product VALUES("+idToString+","+"\'"+v[0]+"\')";
 
-            endpart = "\')";
-            sql = ""+first+ ""+v[0]+""+endpart;
-
-            cout << sql << endl;
+            //cout << sql << endl;
 
             res = PQexec(conn,sql.c_str());
 
@@ -144,17 +142,15 @@ void insert_data_impl(PGconn *conn){
             int id = count+1;
 
             stringstream ss;
+            string idToString,sql;
+
             ss << id;
-            string idToString, first, endpart, sql;
 
             idToString = ss.str();
 
-            first = "INSERT INTO public.product VALUES("+idToString+","+"\'";
+            sql = "INSERT INTO public.product VALUES("+idToString+","+"\'"+v[0]+"\')";
 
-            endpart = "\')";
-            sql = ""+first+ ""+v[0]+""+endpart;
-
-            cout << sql << endl;
+            //cout << sql << endl;
 
             res = PQexec(conn,sql.c_str());
 
