@@ -5,7 +5,7 @@ from mysql.connector import Error
 arquivo = open('teste03', 'r')
 arquivolist = list(arquivo)  # cria uma lista com o .txt
 REDO = []  # salva quem vai ser feito REDO
-
+redoList = []  # salva possível transação a aplicar redo.
 # Variaveis p/ identificar se existe no .txt
 
 checkvalue = re.compile(r'T[0-9]*,', re.IGNORECASE) # re.IGNORECASE -> ignorar se maiuscula ou minuscula
@@ -15,7 +15,7 @@ words = re.compile(r'\w+', re.IGNORECASE) # Utilizado p/ pegar o valor das varia
 
 start_checkpoint = re.compile(r'Start CKPT', re.IGNORECASE) # re.IGNORECASE -> ignorar se maiuscula ou minuscula
 end_checkpoint = re.compile(r'End CKPT', re.IGNORECASE) # re.IGNORECASE -> ignorar se maiuscula ou minuscula
-
+start = re.compile(r'Start', re.IGNORECASE) # re.IGNORECASE -> ignorar se maiuscula ou minuscula
 
 def db_connection():
     try:
@@ -25,11 +25,11 @@ def db_connection():
                                 password='')
        if connection.is_connected():
             db_info = connection.get_server_info()
-            print('Connected to mysql server: ', db_info)
+            print('Connected to mysql server: ', db_info, "\n")
             return connection;
 
     except Error as e:
-        print('Failed to connect to the database',e)
+        print('Failed to connect to the database',e, "\n")
                                    
 
 connection = db_connection()
@@ -44,30 +44,37 @@ variaveis = {}
 for i in range(0,len(valores),2): #Iniciar primeiros valores das variáveis (A B C...)
     variaveis[valores[i]]= valores[i+1]
 del valores
-#print("", variaveis)
+print("Variáveis iniciais", variaveis, "\n")
 end = 0
+
+startedTransaction = []
 
 for linha in reversed(arquivolist): #Verificar os casos e criar as listas de REDO
     # if commit.search(linha):  #Procura commit
     #     REDO.append(extracT.findall(linha)[0])
-    if start_checkpoint.search(linha): #procura start checkpoint
-        listaTransacao = extracT.findall(linha) #pega todas as transacoes do checkpoint
 
-        for transacao in listaTransacao:
-            REDO.append(transacao) #adiciona cada transacao na lista de redo   
+    if end_checkpoint.search(linha):
+        end = 1
+    elif end and start_checkpoint.search(linha): #procura start checkpoint para 
+        end = 0
+        break   
+    elif commit.search(linha):  #Procura commit
+        REDO.append(extracT.findall(linha)[0]) 
+    elif start.search(linha): #verificar transacao que iniciaram
+        startedTransaction.append(extracT.findall(linha)[0])  
+
+uncommited = list(set(startedTransaction) - set(REDO))
     
-
-
 print("Aplicado REDO:", REDO, "\n")
+print("Não aplicado REDO:", uncommited, "\n")
 
 for j in range(1,len(arquivolist)-1,1):
-    linha = arquivolist[j]    
-    if (checkvalue.search(linha)):
-        if(extracT.findall(linha)[0] in REDO):           
-            variaveis[words.findall(linha)[1]] = words.findall(linha)[2]
+    linha = arquivolist[j]  
+    if (checkvalue.search(linha)) and (extracT.findall(linha)[0] in REDO) and not start_checkpoint.search(linha):          
+        variaveis[words.findall(linha)[2]] = words.findall(linha)[3]
    
 
-#print("Resultado:", variaveis)
+print("Resultado:", variaveis)
 arquivo.close()
 
 if connection.is_connected():
