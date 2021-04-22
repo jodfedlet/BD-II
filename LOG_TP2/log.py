@@ -2,10 +2,13 @@ import re;
 import mysql.connector as mc
 from mysql.connector import Error
 
-arquivo = open('teste03', 'r')
+finalTeste = False
+tabelaArquivo = 'teste03'
+if finalTeste:
+    tabelaArquivo = 'teste_final'
+arquivo = open(tabelaArquivo, 'r')
 arquivolist = list(arquivo)  # cria uma lista com o .txt
 REDO = []  # salva quem vai ser feito REDO
-redoList = []  # salva possível transação a aplicar redo.
 # Variaveis p/ identificar se existe no .txt
 
 checkvalue = re.compile(r'T[0-9]*,', re.IGNORECASE) # re.IGNORECASE -> ignorar se maiuscula ou minuscula
@@ -35,9 +38,6 @@ def db_connection():
 connection = db_connection()
 cursor = connection.cursor()
 
-cursor.execute("select * from teste03")
-res = cursor.fetchone();
-#print(res)    
 
 valores = words.findall(arquivolist[0])
 variaveis = {}
@@ -45,18 +45,19 @@ for i in range(0,len(valores),2): #Iniciar primeiros valores das variáveis (A B
     variaveis[valores[i]]= valores[i+1]
 del valores
 print("Variáveis iniciais", variaveis, "\n")
-end = 0
+end = False
 
 startedTransaction = []
+checkPoinValue = []
 
-for linha in reversed(arquivolist): #Verificar os casos e criar as listas de REDO
-    # if commit.search(linha):  #Procura commit
-    #     REDO.append(extracT.findall(linha)[0])
-
+for linha in reversed(arquivolist): #Verificar os casos e criar as listas de REDO+
     if end_checkpoint.search(linha):
-        end = 1
-    elif end and start_checkpoint.search(linha): #procura start checkpoint para 
-        end = 0
+        end = True
+    elif end and start_checkpoint.search(linha): #procura start checkpoint para e se o mesmo é válido
+        transacoes = extracT.findall(linha)
+        for transacao in transacoes:
+            checkPoinValue.append(transacao)
+        end = False
         break   
     elif commit.search(linha):  #Procura commit
         REDO.append(extracT.findall(linha)[0]) 
@@ -65,15 +66,44 @@ for linha in reversed(arquivolist): #Verificar os casos e criar as listas de RED
 
 uncommited = list(set(startedTransaction) - set(REDO))
     
+print("Transacoes com checkpoint:", checkPoinValue, "\n")    
 print("Aplicado REDO:", REDO, "\n")
 print("Não aplicado REDO:", uncommited, "\n")
+
+updatedValue = []
 
 for j in range(1,len(arquivolist)-1,1):
     linha = arquivolist[j]  
     if (checkvalue.search(linha)) and (extracT.findall(linha)[0] in REDO) and not start_checkpoint.search(linha):          
-        variaveis[words.findall(linha)[2]] = words.findall(linha)[3]
+        id = words.findall(linha)[1]
+        column = words.findall(linha)[2]
+        value = words.findall(linha)[3]
+
+        sqlSelect = "select "+column+" from "+tabelaArquivo+" WHERE id = "+id
+        print("-------------------------------------")
+        print(sqlSelect)
+        cursor.execute(sqlSelect)
+        dbValue = list(cursor.fetchone())[0]
+
+        #if dbValue != int(value):
+            
+        print("Valores de {0}: antigo -> {1} atual -> {2}".format(column, dbValue, value))
+        sqlUpdate = "update "+tabelaArquivo+" SET "+column+" = "+value+" WHERE id = "+id
+        print(sqlUpdate)
+        print("-------------------------------------")
+        print()
+
+        cursor.execute(sqlUpdate)
+        connection.commit()
+
+        updatedValue.append(column)
+
+        variaveis[column] = value
    
 
+updatedValue = list(set(updatedValue)) #remover valores duplicados
+
+print("Dados Atualizados:", updatedValue)
 print("Resultado:", variaveis)
 arquivo.close()
 
