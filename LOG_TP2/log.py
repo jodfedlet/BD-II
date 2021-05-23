@@ -29,7 +29,7 @@ def db_connection():
        if connection.is_connected():
             db_info = connection.get_server_info()
             print('Connected to mysql server: ', db_info, "\n")
-            return connection;
+            return connection
 
     except Error as e:
         print('Failed to connect to the database',e, "\n")
